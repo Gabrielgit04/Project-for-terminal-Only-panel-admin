@@ -21,14 +21,27 @@ export const getMovilizationMonthlyServer = createServerFn({ method: "GET" })
       const fromTS = `${year}-01-01T00:00:00-04:00`;
       const toTS = `${year}-12-31T23:59:59-04:00`;
 
-      const { data: rows, error } = await (supabase as any)
-        .from('entrada')
-        .select("hora")
-        .is("deleted_at", null)
-        .gte("hora", fromTS)
-        .lte("hora", toTS);
+      const [entradasRes, salidasRes] = await Promise.all([
+        (supabase as any)
+          .from('entrada')
+          .select("hora")
+          .is("deleted_at", null)
+          .gte("hora", fromTS)
+          .lte("hora", toTS),
+        (supabase as any)
+          .from('salida')
+          .select("hora, entrada_id")
+          .is("deleted_at", null)
+          .is("entrada_id", null)
+          .gte("hora", fromTS)
+          .lte("hora", toTS),
+      ]);
 
-      if (error) throw error;
+      if (entradasRes.error) throw entradasRes.error;
+      if (salidasRes.error) throw salidasRes.error;
+
+      const entradas = entradasRes.data ?? [];
+      const salidasStandalone = salidasRes.data ?? [];
 
       const monthly: Record<string, number> = {};
       for (let m = 1; m <= 12; m++) {
@@ -36,7 +49,7 @@ export const getMovilizationMonthlyServer = createServerFn({ method: "GET" })
         monthly[key] = 0;
       }
 
-      for (const r of rows ?? []) {
+      for (const r of [...entradas, ...salidasStandalone]) {
         const veHora = toVE((r as any).hora);
         const key = veHora?.slice(0, 7);
         if (key && monthly[key] !== undefined) monthly[key]++;

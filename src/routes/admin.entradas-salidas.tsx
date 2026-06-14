@@ -618,7 +618,7 @@ function EntradasSalidasPage() {
                   </Select>
                 </Field>
                 <Field label="Vehículo">
-                  <Input value={form.placa_vehiculo} onChange={(e) => setForm({ ...form, placa_vehiculo: e.target.value })} placeholder="Placa" />
+                  <Input value={form.placa_vehiculo} onChange={(e) => setForm({ ...form, placa_vehiculo: e.target.value.toUpperCase() })} placeholder="Placa" />
                 </Field>
                 <Field label="Tipología">
                   <Select value={form.id_tipologia} onValueChange={(v) => setForm({ ...form, id_tipologia: v })}>
@@ -889,7 +889,7 @@ function EntradasSalidasPage() {
             </div>
             <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 p-4 text-center">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Tasas Recaudadas</p>
-              <p className="font-display text-2xl font-bold text-amber-700 dark:text-amber-400">{cierre.salTasas.toLocaleString("es-VE")}</p>
+              <p className="font-display text-2xl font-bold text-amber-700 dark:text-amber-400">{cierre.salTasas.toLocaleString("es-VE")} Tasas</p>
             </div>
           </div>
         </CardContent>

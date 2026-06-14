@@ -205,9 +205,9 @@ function ChoferPage() {
                                     />
                                 </Field>
                                 <Field label="Placa Unidad">
-                                    <Input
-                                        value={form.placa_unidad}
-                                        onChange={(e) => setForm({ ...form, placa_unidad: e.target.value })}
+                                <Input
+                                    value={form.placa_unidad}
+                                    onChange={(e) => setForm({ ...form, placa_unidad: e.target.value.toUpperCase() })}
                                     />
                                 </Field>
                             </div>

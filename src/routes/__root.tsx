@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import appCss from "../styles.css?url";
+import logoSrc from "@/public/assets/Imagen1.png";
 import { AuthProvider } from "@/lib/auth-provider";
 import { useAuth } from "@/lib/use-auth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -40,6 +41,7 @@ export const Route = createRootRoute({
       { name: "description", content: "Plataforma de venta de listines y auditoría de recaudación del Terminal Alí Primera." },
     ],
     links: [
+      { rel: "icon", type: "image/png", href: logoSrc },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" },

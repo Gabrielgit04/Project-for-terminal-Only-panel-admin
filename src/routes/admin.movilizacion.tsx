@@ -255,6 +255,7 @@ function MovilizacionPage() {
       toast.success("Viaje eliminado");
       loadMov();
       loadKPIs();
+      loadCharts();
     } catch (err: any) { toast.error(err.message); }
   }
 

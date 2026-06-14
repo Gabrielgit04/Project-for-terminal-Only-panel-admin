@@ -44,7 +44,7 @@ function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Bus} label="Movilizaciones Activas" value={String(data?.movilizacionesActivas ?? "—")} />
+        <StatCard icon={Bus} label="Movilizaciones" value={String(data?.movilizacionesActivas ?? "—")} />
         <StatCard icon={Truck} label="Vehículos Operativos" value={String(data?.vehiculosOperativos ?? "—")} />
         <StatCard icon={UserCheck} label="Choferes Disponibles" value={String(data?.choferesDisponibles ?? "—")} />
         <StatCard icon={MapPin} label="Rutas Cubiertas" value={String(data?.rutasCubiertas ?? "—")} />

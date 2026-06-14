@@ -261,7 +261,7 @@ function VehiculosPage() {
                             <Field label="Placa">
                                 <Input
                                     value={form.placa}
-                                    onChange={(e) => setForm({ ...form, placa: e.target.value })}
+                                    onChange={(e) => setForm({ ...form, placa: e.target.value.toUpperCase() })}
                                     placeholder="Ej: ABC-123"
                                 />
                             </Field>

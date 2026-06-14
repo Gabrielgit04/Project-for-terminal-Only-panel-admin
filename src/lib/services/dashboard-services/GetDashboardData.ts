@@ -50,16 +50,29 @@ export const getDashboardDataServer = createServerFn({ method: "GET" })
       const fromTS = `${from.replace(" ", "T")}-04:00`;
       const toTS = `${to.replace(" ", "T")}-04:00`;
 
-      const { data: movs, error: movErr } = await (supabase as any)
-        .from("entrada")
-        .select("id, hora, id_ruta, placa_vehiculo, id_chofer")
-        .is("deleted_at", null)
-        .gte("hora", fromTS)
-        .lte("hora", toTS);
+      const [entradasRes, salidasRes] = await Promise.all([
+        (supabase as any)
+          .from("entrada")
+          .select("id, hora, id_ruta, placa_vehiculo, id_chofer")
+          .is("deleted_at", null)
+          .gte("hora", fromTS)
+          .lte("hora", toTS),
+        (supabase as any)
+          .from("salida")
+          .select("id, hora, id_ruta, placa_vehiculo, id_chofer")
+          .is("deleted_at", null)
+          .is("entrada_id", null)
+          .gte("hora", fromTS)
+          .lte("hora", toTS),
+      ]);
 
-      if (movErr) throw movErr;
+      if (entradasRes.error) throw entradasRes.error;
+      if (salidasRes.error) throw salidasRes.error;
 
-      const movRows = movs ?? [];
+      const movRows = [
+        ...(entradasRes.data ?? []),
+        ...(salidasRes.data ?? []),
+      ];
 
       const rutaIds = [...new Set(movRows.map((r: any) => r.id_ruta))] as number[];
 

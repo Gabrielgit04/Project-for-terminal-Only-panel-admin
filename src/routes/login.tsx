@@ -56,7 +56,7 @@ function LoginPage() {
             <img src={logoSrc} alt="Logo" className="h-full w-full rounded-lg object-contain" />
           </div>
           <h1 className="mt-4 font-display text-2xl font-bold">Terminal Alí Primera</h1>
-          <p className="text-sm text-muted-foreground">Sistema de gestión de recaudación</p>
+          <p className="text-sm text-muted-foreground">Sistema de gestión de operaciones</p>
         </div>
 
         <form

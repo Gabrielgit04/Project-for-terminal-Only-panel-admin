@@ -36,4 +36,4 @@ dist-ssr
 .env.*
 !.env.example
 
-/docs/
+README-CHANGES.md

@@ -48,7 +48,7 @@ Es el **registro de choferes**. Se almacena su nombre completo, cedula y la plac
 Es el **inventario de autobuses**. Cada vehiculo tiene placa, marca, modelo, tipo (encava, por puesto, colectivo) y capacidad de puestos.
 
 ### Usuarios
-Son las **personas que pueden usar el sistema**: administradores (acceso total), gerentes y personal de garita. Cada uno tiene su nombre de usuario y contrasena.
+Son las **personas que pueden usar el sistema**: presidente, coordinadores, gerentes, asistentes y personal de garita. Cada uno tiene su nombre de usuario y contrasena.
 
 ---
 
@@ -58,7 +58,7 @@ Son las **personas que pueden usar el sistema**: administradores (acceso total),
 
 Control de acceso de unidades al terminal. Permite:
 
-- **Registrar entrada**: cuando un autobus llega, se registra con tipologia (cantidad de puestos), organizacion, ruta, chofer, placa, desembarque (pasajeros que bajan), serial de listin y tipo de servicio (suburbano/interurbano).
+- **Registrar entrada**: cuando un autobus llega, se registra con tipologia (cantidad de puestos), organizacion, ruta, chofer, placa, desembarque (pasajeros que bajan) y tipo de servicio (suburbano/interurbano).
 - **Registrar salida**: cuando un autobus se va, se registran los mismos datos mas las tasas cobradas. Si existe una entrada con la misma placa en estado "en espera", se vinculan automaticamente.
 - **Editar registros**: cada fila tiene un boton para corregir datos.
 - **Resumen operativo**: panel lateral que muestra totales de unidades, pasajeros y tasas, separados por suburbanos e interurbanos.
@@ -111,9 +111,8 @@ Resumen operativo con tarjetas de movilizaciones activas, vehiculos operativos, 
 1. El autobus llega al terminal
 2. Se registra una ENTRADA en Garita
    - Placa, conductor, ruta, pasajeros que bajan (desembarque)
-   - Tipo de servicio: suburbano o interurbano
-   - Serial de listin (opcional)
-   - Estado: "en_espera"
+    - Tipo de servicio: suburbano o interurbano
+    - Estado: "en_espera"
 3. El autobus espera en el terminal
 4. El autobus sale del terminal
 5. Se registra una SALIDA en Garita
@@ -144,12 +143,14 @@ Todo el sistema opera en la zona horaria **America/Caracas** (UTC -4). Las horas
 
 ## Autenticacion y Roles
 
-El sistema cuenta con autenticacion por usuario y contrasena, con tres niveles de acceso:
+El sistema cuenta con autenticacion por usuario y contrasena, con cinco niveles de acceso:
 
 | Rol | Acceso |
 |-----|--------|
-| **admin** | Acceso completo a todas las secciones |
-| **gerente** | Acceso operativo (dashboard, movilizaciones, reportes) |
+| **presidente** | Acceso completo a todo el sistema |
+| **coordinador** | Acceso completo (excepto modificar presidente) |
+| **gerente** | Acceso operativo (dashboard, movilizaciones, reportes, vehiculos, conductores, rutas) |
+| **asistente** | Acceso a movilizaciones y reportes |
 | **garita** | Solo registro de entradas y salidas |
 
 ---

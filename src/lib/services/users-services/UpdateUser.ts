@@ -20,6 +20,24 @@ export const UpdateUserServer = createServerFn({ method: "POST" })
                 throw new Error("El usuario solo puede contener letras, números y guiones bajos");
             }
 
+            // Validar que coordinador/gerente no cambien contraseña del presidente
+            if (data.contrasena && data.contrasena.trim() !== "") {
+                const { data: { user: currentUser } } = await supabase.auth.getUser();
+                const currentRole = currentUser?.user_metadata?.role || "";
+
+                if (currentRole === "coordinador" || currentRole === "gerente") {
+                    const { data: targetUser } = await supabase
+                        .from("usuario")
+                        .select("rol")
+                        .eq("id", data.userId)
+                        .maybeSingle();
+
+                    if (targetUser?.rol === "presidente") {
+                        throw new Error("No tienes permisos para cambiar la contraseña del presidente");
+                    }
+                }
+            }
+
             // 1. Generamos el nuevo email virtual basado en el username modificado
             const nuevoVirtualEmail = `${usuario.toLowerCase()}@systemterminal.com`;
 

@@ -67,6 +67,7 @@ function EntradasSalidasPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [tipoRegistro, setTipoRegistro] = useState<"entrada" | "salida">("entrada");
+  const [puestosInput, setPuestosInput] = useState("");
   const [form, setForm] = useState({
     id_tipologia: "",
     id_organizacion: "",
@@ -132,6 +133,7 @@ function EntradasSalidasPage() {
   useEffect(() => { load(); }, [dateFrom, dateTo]);
 
   function resetForm() {
+    setPuestosInput("");
     setForm({
       id_tipologia: "",
       id_organizacion: "",
@@ -153,6 +155,8 @@ function EntradasSalidasPage() {
 
   function openEdit(row: any) {
     setEditRow(row);
+    const tipo = tipologias.find((t: any) => t.id === row.id_tipologia);
+    setPuestosInput(tipo ? String(tipo.cantidad_puestos) : String(row.id_tipologia ?? ""));
     setForm({
       id_tipologia: String(row.id_tipologia ?? ""),
       id_organizacion: row.id_organizacion ?? "",
@@ -448,6 +452,7 @@ function EntradasSalidasPage() {
                                     const veh = vehicles.find((x) => x.placa === val);
                                     const chof = choferes.find((c: any) => c.placa_unidad === val);
                                     const tipo = tipologias.find((t: any) => t.cantidad_puestos === veh?.cantidad_puestos);
+                                    setPuestosInput(String(veh?.cantidad_puestos ?? ""));
                                     const updates: any = {
                                       placa_vehiculo: val,
                                       id_organizacion: veh?.id_organizacion ?? form.id_organizacion,
@@ -477,21 +482,15 @@ function EntradasSalidasPage() {
                     </PopoverContent>
                   </Popover>
                 </Field>
-                <Field label="Tipología">
-                  <Select value={form.id_tipologia} onValueChange={(v) => {
-                    setForm({ ...form, id_tipologia: v });
-                  }}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                    <SelectContent>
-                      {tipologias
-                        .filter((t: any, i: number, a: any[]) => a.findIndex((x: any) => x.cantidad_puestos === t.cantidad_puestos) === i)
-                        .map((t: any) => (
-                          <SelectItem key={t.id} value={String(t.id)}>
-                            {t.cantidad_puestos ?? t.id} Puestos
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                <Field label="Tipología (Puestos)">
+                  <Input type="number" min={1} value={puestosInput} placeholder="Ej: 23"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPuestosInput(val);
+                      const tipo = tipologias.find((t: any) => t.cantidad_puestos === Number(val));
+                      setForm({ ...form, id_tipologia: tipo ? String(tipo.id) : "" });
+                    }}
+                  />
                 </Field>
                 <Field label="Ruta">
                   <Popover open={rutaOpen} onOpenChange={setRutaOpen}>
@@ -567,9 +566,11 @@ function EntradasSalidasPage() {
                   <Input type="number" min={0} value={form.puestos_ocupados}
                     onChange={(e) => setForm({ ...form, puestos_ocupados: e.target.value })} placeholder="0" />
                 </Field>
-                <Field label="Serial Listín">
-                  <Input value={form.serial_listin} onChange={(e) => setForm({ ...form, serial_listin: e.target.value })} placeholder="Nro. de listín" />
-                </Field>
+                {tipoRegistro === "salida" && (
+                  <Field label="Serial Listín">
+                    <Input value={form.serial_listin} onChange={(e) => setForm({ ...form, serial_listin: e.target.value })} placeholder="Nro. de listín" />
+                  </Field>
+                )}
                 <Field label="Tipo de Servicio">
                   <Select value={form.tipo_servicio} onValueChange={(v) => setForm({ ...form, tipo_servicio: v })}>
                     <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
@@ -620,17 +621,15 @@ function EntradasSalidasPage() {
                 <Field label="Vehículo">
                   <Input value={form.placa_vehiculo} onChange={(e) => setForm({ ...form, placa_vehiculo: e.target.value.toUpperCase() })} placeholder="Placa" />
                 </Field>
-                <Field label="Tipología">
-                  <Select value={form.id_tipologia} onValueChange={(v) => setForm({ ...form, id_tipologia: v })}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                    <SelectContent>
-                      {tipologias
-                        .filter((t: any, i: number, a: any[]) => a.findIndex((x: any) => x.cantidad_puestos === t.cantidad_puestos) === i)
-                        .map((t: any) => (
-                          <SelectItem key={t.id} value={String(t.id)}>{t.cantidad_puestos ?? t.id} Puestos</SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                <Field label="Tipología (Puestos)">
+                  <Input type="number" min={1} value={puestosInput} placeholder="Ej: 23"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPuestosInput(val);
+                      const tipo = tipologias.find((t: any) => t.cantidad_puestos === Number(val));
+                      setForm({ ...form, id_tipologia: tipo ? String(tipo.id) : "" });
+                    }}
+                  />
                 </Field>
                 <Field label="Chofer">
                   <Select value={form.id_chofer} onValueChange={(v) => setForm({ ...form, id_chofer: v })}>
@@ -646,9 +645,11 @@ function EntradasSalidasPage() {
                   <Input type="number" min={0} value={form.puestos_ocupados}
                     onChange={(e) => setForm({ ...form, puestos_ocupados: e.target.value })} />
                 </Field>
-                <Field label="Serial Listín">
-                  <Input value={form.serial_listin} onChange={(e) => setForm({ ...form, serial_listin: e.target.value })} placeholder="Nro. de listín" required />
-                </Field>
+                {editRow?.tipo === "salida" && (
+                  <Field label="Serial Listín">
+                    <Input value={form.serial_listin} onChange={(e) => setForm({ ...form, serial_listin: e.target.value })} placeholder="Nro. de listín" required />
+                  </Field>
+                )}
                 <Field label="Tipo de Servicio">
                   <Select value={form.tipo_servicio} onValueChange={(v) => setForm({ ...form, tipo_servicio: v })}>
                     <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>

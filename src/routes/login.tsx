@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,10 +25,12 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setLoginError("");
     try {
       await login(username.trim(), password);
       const user = auth.getUser();
@@ -39,7 +41,9 @@ function LoginPage() {
         navigate({ to: "/admin" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al iniciar sesión");
+      const msg = err instanceof Error ? err.message : "Error al iniciar sesión";
+      setLoginError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -56,7 +60,7 @@ function LoginPage() {
             <img src={logoSrc} alt="Logo" className="h-full w-full rounded-lg object-contain" />
           </div>
           <h1 className="mt-4 font-display text-2xl font-bold">Terminal Alí Primera</h1>
-          <p className="text-sm text-muted-foreground">Sistema de gestión de operaciones</p>
+          <p className="text-sm text-muted-foreground">Sistema de gestión operacional</p>
         </div>
 
         <form
@@ -98,7 +102,14 @@ function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" className="mt-6 w-full gap-2" disabled={loading}>
+          {loginError && (
+            <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{loginError}</span>
+            </div>
+          )}
+
+          <Button type="submit" className="mt-4 w-full gap-2" disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Acceder
           </Button>

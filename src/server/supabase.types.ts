@@ -340,6 +340,7 @@ export type Database = {
           created_at: string | null
           deleted_at: string | null
           id: string
+          intentos_login: number | null
           nombre: string | null
           rol: string | null
           updated_at: string | null
@@ -349,6 +350,7 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           id: string
+          intentos_login?: number | null
           nombre?: string | null
           rol?: string | null
           updated_at?: string | null
@@ -358,6 +360,7 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           id?: string
+          intentos_login?: number | null
           nombre?: string | null
           rol?: string | null
           updated_at?: string | null

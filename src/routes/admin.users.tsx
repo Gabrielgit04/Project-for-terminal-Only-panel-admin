@@ -35,6 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/use-auth";
 import { SelectUserServer } from "@/lib/services/users-services/SelectUser";
 import { CreateUserServer } from "@/lib/services/users-services/CreateUser";
 import { UpdateUserServer } from "@/lib/services/users-services/UpdateUser";
@@ -72,6 +73,7 @@ const emptyForm: FormState = {
 };
 
 function UsuariosPage() {
+    const { user: currentUser } = useAuth();
     const [rows, setRows] = useState<Users[]>([]);
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
@@ -188,7 +190,7 @@ function UsuariosPage() {
                             <Field label="Nombre">
                                 <Input
                                     value={form.nombre}
-                                    onChange={(e) => setForm({ ...form, nombre: e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1).toLowerCase() })}
+                                    onChange={(e) => setForm({ ...form, nombre: e.target.value.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) })}
                                 />
                             </Field>
                             <Field label="Usuario">
@@ -212,8 +214,10 @@ function UsuariosPage() {
                                 >
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="gerente">Gerente de operaciones</SelectItem>
+                                        <SelectItem value="presidente">Presidente</SelectItem>
+                                        <SelectItem value="coordinador">Coordinador</SelectItem>
+                                        <SelectItem value="gerente">Gerente de Operaciones</SelectItem>
+                                        <SelectItem value="asistente">Asistente de Operaciones</SelectItem>
                                         <SelectItem value="garita">Garita</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -264,30 +268,34 @@ function UsuariosPage() {
                                             <TableCell className="font-medium">{u.nombre}</TableCell>
                                             <TableCell>{u.usuario}</TableCell>
                                             <TableCell>
-                                                <Badge className={`${u.rol === "admin" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"} capitalize`}>
-                                                    {u.rol}
+                                                <Badge className={`${u.rol === "presidente" || u.rol === "coordinador" || u.rol === "gerente" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"} capitalize`}>
+                                                    {u.rol === "presidente" ? "Presidente" : u.rol === "coordinador" ? "Coordinador" : u.rol === "gerente" ? "Gerente de Op." : u.rol === "asistente" ? "Asistente de Op." : u.rol}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-1">
-                                                    <Button
-                                                        title="Editar"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="border-amber-400 text-amber-600 hover:bg-amber-50 hover:text-amber-400"
-                                                        onClick={() => openEdit(u)}
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                    <Button
-                                                        title="Eliminar"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="border-red-400 text-red-600 hover:bg-red-50 hover:text-red-400"
-                                                        onClick={() => remove(u.id || "")}
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
+                                                    {!(u.rol === "presidente" && (currentUser?.role === "coordinador" || currentUser?.role === "gerente")) && (
+                                                        <Button
+                                                            title="Editar"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="border-amber-400 text-amber-600 hover:bg-amber-50 hover:text-amber-400"
+                                                            onClick={() => openEdit(u)}
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    )}
+                                                    {!(u.rol === "presidente" && (currentUser?.role === "coordinador" || currentUser?.role === "gerente")) && (
+                                                        <Button
+                                                            title="Eliminar"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="border-red-400 text-red-600 hover:bg-red-50 hover:text-red-400"
+                                                            onClick={() => remove(u.id || "")}
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>

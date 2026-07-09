@@ -42,7 +42,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@/lib/utils";
 
 
-type TipologyValue = 32 | 5 | 60 | 20;
+type TipologyValue = 32 | 5 | 60 | 20 | 23 | 24 | 15 | 4 | 28;
 
 const PUESTOS_POR_TIPO: Record<"encava" | "por puesto" | "colectivo", TipologyValue> = {
     encava: 32,
@@ -442,7 +442,7 @@ function VehiculosPage() {
                                             <TableCell>{v.organizacion_nombre ?? "—"}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-1">
-                                                    {user?.role === "admin" && (
+                                                    {(user?.role === "presidente" || user?.role === "coordinador" || user?.role === "gerente") && (
                                                         <>
                                                             <Button
                                                                 title="Editar un registro"

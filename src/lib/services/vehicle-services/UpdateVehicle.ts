@@ -8,7 +8,7 @@ export const UpdateVehicleServer = createServerFn({ method: "POST" })
     cedula_propietario: string;
     propietario: string;
     tipo: "encava" | "por puesto" | "colectivo";
-    cantidad_puestos: 32 | 5 | 60 | 20;
+    cantidad_puestos: 32 | 5 | 60 | 20 | 23 | 24 | 15 | 4 | 28;
     id_organizacion?: string | null;
     organizacion_nombre?: string | null;
     organizacion_rif?: string | null;

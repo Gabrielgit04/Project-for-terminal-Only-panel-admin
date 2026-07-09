@@ -54,12 +54,9 @@ export type { CierreDiarioResponse };
 import { DashboardData, getDashboardDataServer } from "@/lib/services/dashboard-services/GetDashboardData";
 export type { DashboardData, UltimaMovilizacion } from "@/lib/services/dashboard-services/GetDashboardData";
 // <---------------------------->
-// FINANCE SERVICES
-// CAJA CHICA SERVICES
-
 const API_URL = (import.meta.env.VITE_API_URL as string) || "/api";
 
-export type Role = "admin" | "gerente" | "garita";
+export type Role = "presidente" | "coordinador" | "gerente" | "asistente" | "garita";
 
 
 export interface AuthUser {
@@ -80,7 +77,7 @@ export interface Vehicle {
   cedula_propietario: string;
   propietario: string;
   tipo: VehicleType;
-  cantidad_puestos: 32 | 5 | 60 | 20 | null;
+  cantidad_puestos: 32 | 5 | 60 | 20 | 23 | 24 | 15 | 4 | 28 | null;
   id_organizacion?: string | null;
   organizacion_nombre?: string | null;
 }
@@ -363,7 +360,7 @@ export const api = {
     cedula_propietario: string;
     propietario: string;
     tipo: VehicleType;
-    cantidad_puestos: 32 | 5 | 60 | 20;
+    cantidad_puestos: 32 | 5 | 60 | 20 | 23 | 24 | 15 | 4 | 28;
     organizacion_nombre?: string;
     organizacion_rif?: string;
     id_organizacion?: string | null;
@@ -379,7 +376,7 @@ export const api = {
     cedula_propietario: string;
     propietario: string;
     tipo: VehicleType;
-    cantidad_puestos: 32 | 5 | 60 | 20;
+    cantidad_puestos: 32 | 5 | 60 | 20 | 23 | 24 | 15 | 4 | 28;
     id_organizacion?: string | null;
     organizacion_nombre?: string | null;
     organizacion_rif?: string | null;
@@ -496,7 +493,9 @@ export const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
 ];
 
 export const ROLE_LABELS: Record<Role, string> = {
-  admin: "Administrador",
+  presidente: "Presidente",
+  coordinador: "Coordinador de Operaciones",
   gerente: "Gerente de Operaciones",
+  asistente: "Asistente de Operaciones",
   garita: "Garita",
 };

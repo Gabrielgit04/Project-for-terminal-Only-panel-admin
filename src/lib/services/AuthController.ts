@@ -2,15 +2,101 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
 import type { AuthUser } from "@/lib/api";
 
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_MINUTES = 3;
+const LOCKOUT_MS = LOCKOUT_MINUTES * 60 * 1000;
+
+async function verificarBloqueo(username: string): Promise<void> {
+  try {
+    const { data: user, error } = await supabase
+      .from("usuario")
+      .select("intentos_login, updated_at")
+      .ilike("usuario", username.toLowerCase())
+      .maybeSingle();
+
+    if (error || !user) return;
+
+    const intentos = user.intentos_login ?? 0;
+    if (intentos < MAX_ATTEMPTS) return;
+
+    const bloqueadoHasta = new Date(user.updated_at ?? Date.now()).getTime() + LOCKOUT_MS;
+    const ahora = Date.now();
+
+    if (ahora < bloqueadoHasta) {
+      const segundosRestantes = Math.ceil((bloqueadoHasta - ahora) / 1000);
+      const minutos = Math.floor(segundosRestantes / 60);
+      const segundos = segundosRestantes % 60;
+      throw new Error(
+        `Demasiados intentos fallidos. Espera ${minutos}m ${segundos}s para intentar de nuevo.`
+      );
+    }
+
+    // Bloqueo expirado — reseteamos
+    await supabase
+      .from("usuario")
+      .update({ intentos_login: 0 })
+      .ilike("usuario", username.toLowerCase());
+  } catch (err: any) {
+    if (err.message?.startsWith("Demasiados intentos")) throw err;
+    // Error silencioso — columna no existe o problema similar
+  }
+}
+
+async function registrarIntentoFallido(username: string): Promise<number | null> {
+  try {
+    const user = username.toLowerCase();
+    const ahora = new Date().toISOString();
+
+    const { data: dbUser, error } = await supabase
+      .from("usuario")
+      .select("intentos_login, updated_at")
+      .ilike("usuario", user)
+      .maybeSingle();
+
+    if (error || !dbUser) return null;
+
+    const intentosActuales = (dbUser.intentos_login ?? 0) + 1;
+
+    const { error: updateError } = await supabase
+      .from("usuario")
+      .update({ intentos_login: intentosActuales, updated_at: ahora })
+      .ilike("usuario", user);
+
+    if (updateError) return null;
+
+    if (intentosActuales >= MAX_ATTEMPTS) return 0;
+
+    return MAX_ATTEMPTS - intentosActuales;
+  } catch {
+    return null;
+  }
+}
+
+async function resetearIntentos(username: string): Promise<void> {
+  try {
+    await supabase
+      .from("usuario")
+      .update({ intentos_login: 0 })
+      .ilike("usuario", username.toLowerCase());
+  } catch {
+    // Silencioso
+  }
+}
+
 // LOGUEAR USUARIO
 export const loginServer = createServerFn({ method: "POST" })
   .inputValidator((data: { username: string; password: string }) => data)
   .handler(async ({ data }) => {
     try {
-      // 1. Transformamos el username en el email virtual que guardamos en Auth
-      const virtualEmail = `${data.username.trim().toLowerCase()}@systemterminal.com`;
+      const usernameLower = data.username.trim().toLowerCase();
 
-      // 2. Autenticamos directamente en el sistema de Supabase Auth
+      // 1. Verificar si el usuario está bloqueado
+      await verificarBloqueo(usernameLower);
+
+      // 2. Transformamos el username en el email virtual que guardamos en Auth
+      const virtualEmail = `${usernameLower}@systemterminal.com`;
+
+      // 3. Autenticamos directamente en el sistema de Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: virtualEmail,
         password: data.password,
@@ -18,32 +104,44 @@ export const loginServer = createServerFn({ method: "POST" })
 
       // Si las credenciales son incorrectas o no existe, manejamos el error
       if (authError || !authData.user) {
-        throw new Error("Credenciales inválidas");
+        const restantes = await registrarIntentoFallido(usernameLower);
+        if (restantes === null) {
+          throw new Error("Credenciales inválidas");
+        }
+        if (restantes === 0) {
+          throw new Error(
+            `Credenciales inválidas. Has agotado los ${MAX_ATTEMPTS} intentos. Espera ${LOCKOUT_MINUTES} minutos.`
+          );
+        }
+        throw new Error(
+          `Credenciales inválidas. Te quedan ${restantes} intento${restantes === 1 ? "" : "s"}.`
+        );
       }
 
+      // 4. Credenciales correctas — reseteamos intentos
+      await resetearIntentos(usernameLower);
+
       const user = authData.user;
+      const userRole = user.user_metadata?.role || user.app_metadata?.role || "";
 
-      const userRole = user.user_metadata?.role || user.app_metadata?.role;
-
-      // 3. Validación estricta de rol para el panel de administración
-      if (userRole !== "admin" && userRole !== "gerente" && userRole !== "garita") {
+      // 5. Validación estricta de rol para el panel de administración
+      if (userRole !== "presidente" && userRole !== "coordinador" && userRole !== "gerente" && userRole !== "asistente" && userRole !== "garita") {
         await supabase.auth.signOut();
         throw new Error("No tienes permisos para acceder al sistema");
       }
 
       // Buscamos el nombre del usuario en la tabla local 'usuario'
-      const usernameLower = data.username.trim().toLowerCase();
       const { data: dbUser } = await supabase
         .from('usuario')
         .select('nombre')
         .ilike('usuario', usernameLower)
         .maybeSingle();
 
-      // 4. Retornamos la sesión con el JWT seguro de Supabase y el ID tipo UUID
+      // 6. Retornamos la sesión con el JWT seguro de Supabase y el ID tipo UUID
       return {
         token: authData.session?.access_token,
         user: {
-          id: user.id,                               // Este es el nuevo UUID mapeado
+          id: user.id,
           username: user.user_metadata?.username || data.username,
           name: dbUser?.nombre || user.user_metadata?.nombre || user.user_metadata?.name || data.username,
           role: userRole as any,
@@ -53,10 +151,10 @@ export const loginServer = createServerFn({ method: "POST" })
     } catch (err: any) {
       console.error("[Auth error en login]", err.message);
 
-      // Mantenemos tu filtro de errores limpios para el cliente
       if (
-        err.message === "Credenciales inválidas" ||
-        err.message === "No tienes permisos para acceder al sistema"
+        err.message === "No tienes permisos para acceder al sistema" ||
+        err.message.startsWith("Demasiados intentos") ||
+        err.message.startsWith("Credenciales inválidas")
       ) {
         throw err;
       }
@@ -68,18 +166,15 @@ export const loginServer = createServerFn({ method: "POST" })
 export const getPerfilActualServer = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
-      // 1. Obtener el usuario de la sesión actual en el servidor
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !authUser) return null;
 
-      // 2. Extraer el username a partir del email
       const emailVirtual = authUser.email || "";
       const username = emailVirtual.split('@')[0] || authUser.user_metadata?.username;
 
       if (!username) return null;
 
-      // 3. Buscar su nombre real en la tabla pública usando el username
       const { data: dbUser } = await supabase
         .from("usuario")
         .select("nombre, usuario, rol")
@@ -92,7 +187,7 @@ export const getPerfilActualServer = createServerFn({ method: "GET" })
         id: authUser.id,
         username: dbUser.usuario || username,
         name: dbUser.nombre,
-        role: dbUser.rol as any,
+        role: (dbUser.rol ?? "") as any,
       };
     } catch (err) {
       console.error("Error en getPerfilActualServer:", err);

@@ -11,7 +11,6 @@
   },
   "vars": {
     "VITE_SUPABASE_URL": "https://yjfbyziwmwjrulcbuenn.supabase.co",
-    "VITE_SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZmJ5eml3bXdqcnVsY2J1ZW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MzQzNDMsImV4cCI6MjA5NDExMDM0M30.dL2k3Bhx5rgMoMNdXSAGgJJ1uF04nX_aTsaajTnDypM",
     "VITE_BCV_API_KEY": "REDACTED"
   }
 }

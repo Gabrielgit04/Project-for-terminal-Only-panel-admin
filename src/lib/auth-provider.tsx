@@ -42,7 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     inicializarSesion();
   }, []);
   async function login(username: string, password: string) {
-    const { token, user: loggedUser } = await api.login(username, password);
+    const result = await api.login(username, password);
+    if (!result?.token || !result?.user) {
+      throw new Error("Error al iniciar sesión");
+    }
+    const { token, user: loggedUser } = result;
     auth.setSession(token, loggedUser);
     setUser(loggedUser);
   }

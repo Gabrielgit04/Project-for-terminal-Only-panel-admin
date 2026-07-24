@@ -35,10 +35,11 @@ async function verificarBloqueo(username: string): Promise<void> {
     await supabase
       .from("usuario")
       .update({ intentos_login: 0 })
+      .or("intentos_login.gt.0,intentos_login.is.null")
       .ilike("usuario", username.toLowerCase());
   } catch (err: any) {
     if (err.message?.startsWith("Demasiados intentos")) throw err;
-    // Error silencioso — columna no existe o problema similar
+    console.error("[verificarBloqueo] Error:", err.message);
   }
 }
 
@@ -65,17 +66,22 @@ async function registrarIntentoFallido(username: string): Promise<number | null>
       const leido = dbUser.intentos_login ?? 0;
       const nuevo = Math.min(leido + 1, MAX_ATTEMPTS);
 
-      const { error: updateError, count } = await (supabase as any)
+      const { data: updatedRows, error: updateError } = await supabase
         .from("usuario")
         .update({ intentos_login: nuevo, updated_at: new Date().toISOString() })
-        .eq("intentos_login", leido)
+        .or(`intentos_login.eq.${leido},intentos_login.is.null`)
         .ilike("usuario", user)
-        .select("*", { count: "exact" });
+        .select("id");
 
-      if (updateError) return null;
+      if (updateError) {
+        console.error("[registrarIntentoFallido] Update error:", updateError.message);
+        return null;
+      }
+
+      console.log("[registrarIntentoFallido] leido:", leido, "nuevo:", nuevo, "rows:", updatedRows?.length);
 
       // Si el UPDATE afectó filas, logramos atomicidad condicional.
-      if (count && count > 0) {
+      if (updatedRows && updatedRows.length > 0) {
         if (nuevo >= MAX_ATTEMPTS) return 0;
         return MAX_ATTEMPTS - nuevo;
       }
@@ -91,7 +97,8 @@ async function registrarIntentoFallido(username: string): Promise<number | null>
     }
     // Si tras 3 intentos seguimos perdiendo la carrera, devolvemos 0 (bloqueado conservadoramente).
     return 0;
-  } catch {
+  } catch (err: any) {
+    console.error("[registrarIntentoFallido] Error:", err.message);
     return null;
   }
 }
@@ -101,9 +108,10 @@ async function resetearIntentos(username: string): Promise<void> {
     await supabase
       .from("usuario")
       .update({ intentos_login: 0 })
+      .or("intentos_login.gt.0,intentos_login.is.null")
       .ilike("usuario", username.toLowerCase());
-  } catch {
-    // Silencioso
+  } catch (err: any) {
+    console.error("[resetearIntentos] Error:", err.message);
   }
 }
 

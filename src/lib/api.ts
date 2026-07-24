@@ -45,19 +45,30 @@ import type { ControlOperativoData } from "@/lib/services/movilization-services/
 import { getMovilizationKPIsServer } from "@/lib/services/movilization-services/GetMovilizationKPIs";
 import { getMovilizacionDetailServer } from "@/lib/services/movilization-services/GetMovilizacionDetail";
 import { getMovilizationMonthlyServer } from "@/lib/services/movilization-services/GetMovilizationMonthly";
-import { getControlSemanalServer, type ControlSemanalData } from "@/lib/services/movilization-services/GetControlSemanal";
+import {
+  getControlSemanalServer,
+  type ControlSemanalData,
+} from "@/lib/services/movilization-services/GetControlSemanal";
 export type { ControlSemanalData };
 // CIERRE DIARIO
-import { getCierreDiarioServer, type CierreDiarioResponse } from "@/lib/services/cierre-services/GetCierreDiario";
+import {
+  getCierreDiarioServer,
+  type CierreDiarioResponse,
+} from "@/lib/services/cierre-services/GetCierreDiario";
 export type { CierreDiarioResponse };
 // DASHBOARD SERVICES
-import { DashboardData, getDashboardDataServer } from "@/lib/services/dashboard-services/GetDashboardData";
-export type { DashboardData, UltimaMovilizacion } from "@/lib/services/dashboard-services/GetDashboardData";
+import {
+  DashboardData,
+  getDashboardDataServer,
+} from "@/lib/services/dashboard-services/GetDashboardData";
+export type {
+  DashboardData,
+  UltimaMovilizacion,
+} from "@/lib/services/dashboard-services/GetDashboardData";
 // <---------------------------->
 const API_URL = (import.meta.env.VITE_API_URL as string) || "/api";
 
 export type Role = "presidente" | "coordinador" | "gerente" | "asistente" | "garita";
-
 
 export interface AuthUser {
   id?: string;
@@ -93,42 +104,49 @@ export interface Users {
 export type Modalidad = "masivo" | "puesto" | "urbana" | "suburbana" | "interurbana";
 export type MetodoPago = "pago_movil" | "efectivo" | "transferencia" | "punto_venta";
 
-export type DIA_RESTRICT = "LUNES" | "MARTES" | "MIERCOLES" | "JUEVES" | "VIERNES" | "SABADO" | "DOMINGO";
+export type DIA_RESTRICT =
+  | "LUNES"
+  | "MARTES"
+  | "MIERCOLES"
+  | "JUEVES"
+  | "VIERNES"
+  | "SABADO"
+  | "DOMINGO";
 
 export interface Movilizacion {
-  id: number
-  dia: string
-  fecha: string
-  hora: string
-  id_ruta: number
-  placa_vehiculo: string
-  unidades_despachadas: number | null
-  entrada_id: number | null
-  tipo_servicio: string | null
-  total_pasajeros: number | null
-  total_tasas: number | null
-  estado: string | null
-  ruta_nombre?: string | null
-  ruta_origen?: string | null
-  ruta_destino?: string | null
-  hora_entrada?: string | null
-  hora_salida?: string | null
+  id: number;
+  dia: string;
+  fecha: string;
+  hora: string;
+  id_ruta: number;
+  placa_vehiculo: string;
+  unidades_despachadas: number | null;
+  entrada_id: number | null;
+  tipo_servicio: string | null;
+  total_pasajeros: number | null;
+  total_tasas: number | null;
+  estado: string | null;
+  ruta_nombre?: string | null;
+  ruta_origen?: string | null;
+  ruta_destino?: string | null;
+  hora_entrada?: string | null;
+  hora_salida?: string | null;
 }
 
 export interface MovilizacionKPI {
-  totalMovilizado: number
-  totalDespachados: number
-  totalSuspendidos: number
-  totalPuestos: number
-  totalPuestosEntrada: number
-  totalPuestosSalida: number
-  totalPasajesHoy: number
-  vehiculoMasUsado: string
+  totalMovilizado: number;
+  totalDespachados: number;
+  totalSuspendidos: number;
+  totalPuestos: number;
+  totalPuestosEntrada: number;
+  totalPuestosSalida: number;
+  totalPasajesHoy: number;
+  vehiculoMasUsado: string;
 }
 
 export interface MovilizacionMonthly {
-  mes: string
-  total: number
+  mes: string;
+  total: number;
 }
 
 export interface Listin {
@@ -152,6 +170,21 @@ export interface Listin {
 const TOKEN_KEY = "tap_token";
 const USER_KEY = "tap_user";
 
+/**
+ * Inyecta el header `Authorization: Bearer <token>` en el payload que se envía
+ * a las server functions de TanStack Start. Es obligatorio para que el
+ * middleware `requireAuth` del servidor pueda validar el JWT y exponer
+ * `context.user` al handler. Si no hay token (sesión caducada), no se añade y
+ * el servidor devolverá 401.
+ */
+export function withAuth<T extends { data?: unknown }>(payload: T): T & { headers: Record<string, string> } {
+  const token = auth.getToken();
+  return {
+    ...payload,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  };
+}
+
 export const auth = {
   getToken: () => localStorage.getItem(TOKEN_KEY),
   getUser: (): AuthUser | null => {
@@ -170,14 +203,26 @@ export const auth = {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = auth.getToken();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.headers || {}),
-    },
-  });
+  // Timeout cliente: 30s wall-clock de Cloudflare Workers + margen.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init.headers || {}),
+      },
+    });
+  } catch (err: any) {
+    clearTimeout(timer);
+    if (err?.name === "AbortError") throw new Error("La petición tardó demasiado. Reintenta.");
+    throw err;
+  }
+  clearTimeout(timer);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(text || `Error ${res.status}`);
@@ -212,7 +257,9 @@ export const api = {
   },
 
   // GET /listines?from=&to=&modalidad=
-  async listListines(params: { from?: string; to?: string; modalidad?: Modalidad | "all" } = {}): Promise<Listin[]> {
+  async listListines(
+    params: { from?: string; to?: string; modalidad?: Modalidad | "all" } = {},
+  ): Promise<Listin[]> {
     return listListinesServer({
       data: {
         from: params.from,
@@ -232,21 +279,27 @@ export const api = {
     monto: number;
     id_organizacion?: string;
   }) {
-    return CreateListinServer({ data });
+    return CreateListinServer(withAuth({ data }));
   },
 
   async deleteListin(id: number) {
-    return DeleteListinServer({ data: { id } });
+    return DeleteListinServer(withAuth({ data: { id } }));
   },
 
   async selectListinesByMovilizacion(id_movilizacion: number) {
-    return selectListinesByMovilizacionServer({ data: { id_movilizacion } });
+    return selectListinesByMovilizacionServer(withAuth({ data: { id_movilizacion } }));
   },
 
   // MOVILIZACIONES
-  async selectMovilizacion(params: {
-    month?: number; year?: number; filterDate?: string; page?: number; pageSize?: number;
-  } = {}): Promise<{ rows: any[]; count: number }> {
+  async selectMovilizacion(
+    params: {
+      month?: number;
+      year?: number;
+      filterDate?: string;
+      page?: number;
+      pageSize?: number;
+    } = {},
+  ): Promise<{ rows: any[]; count: number }> {
     return selectMovilizationServer({ data: params });
   },
 
@@ -258,16 +311,16 @@ export const api = {
     anden?: string | null;
     entrada_id?: number | null;
   }) {
-    return CreateMovilizationServer({ data });
+    return CreateMovilizationServer(withAuth({ data }));
   },
   async updateMovilizacion(data: { id: number; estado?: string }) {
-    return UpdateMovilizationServer({ data });
+    return UpdateMovilizationServer(withAuth({ data }));
   },
   async deleteMovilizacion(data: { id: number; tipo?: string }) {
-    return DeleteMovilizationServer({ data });
+    return DeleteMovilizationServer(withAuth({ data }));
   },
   async getMovilizacionDetail(data: { id: number }) {
-    return getMovilizacionDetailServer({ data });
+    return getMovilizacionDetailServer(withAuth({ data }));
   },
   async getControlOperativo(data: { from: string; to: string }): Promise<ControlOperativoData> {
     return getControlOperativoServer({ data });
@@ -305,14 +358,13 @@ export const api = {
     contrasena: string;
     rol: string;
   }) {
-    return UpdateUserServer({ data });
+    return UpdateUserServer(withAuth({ data }));
   },
 
   // POST /usuario/delete
   async deleteUser(id: string) {
-    return DeleteUserServer({ data: { id } });
+    return DeleteUserServer(withAuth({ data: { id } }));
   },
-
 
   // ORGANIZACIONES
   async selectOrganizaciones() {
@@ -329,7 +381,7 @@ export const api = {
     distancia_km?: number | null;
     id_organizacion?: string;
   }): Promise<any> {
-    return CreateRutasServer({ data });
+    return CreateRutasServer(withAuth({ data }));
   },
   async updateRutas(data: {
     id: number;
@@ -338,13 +390,13 @@ export const api = {
     distancia_km?: number | null;
     id_organizacion?: string;
   }): Promise<any> {
-    return UpdateRutasServer({ data });
+    return UpdateRutasServer(withAuth({ data }));
   },
   async deleteRutas(id: number): Promise<{ success: boolean }> {
-    return DeleteRutasServer({ data: { id } });
+    return DeleteRutasServer(withAuth({ data: { id } }));
   },
   async migrateRutasOrg(): Promise<{ updated: number; skipped: number }> {
-    return MigrateRutasOrgServer();
+    return MigrateRutasOrgServer(withAuth({}));
   },
 
   // GET /vehiculos
@@ -365,7 +417,7 @@ export const api = {
     organizacion_rif?: string;
     id_organizacion?: string | null;
   }) {
-    return CreateVehicleServer({ data });
+    return CreateVehicleServer(withAuth({ data }));
   },
 
   // POST /vehiculos/update
@@ -381,12 +433,12 @@ export const api = {
     organizacion_nombre?: string | null;
     organizacion_rif?: string | null;
   }) {
-    return UpdateVehicleServer({ data });
+    return UpdateVehicleServer(withAuth({ data }));
   },
 
   // POST /vehiculos/delete (soft delete)
   async deleteVehicle(placa: string) {
-    return DeleteVehicleServer({ data: { placa } });
+    return DeleteVehicleServer(withAuth({ data: { placa } }));
   },
 
   // CHOFER
@@ -398,13 +450,13 @@ export const api = {
     cedula?: number | null;
     placa_unidad?: string | null;
   }) {
-    return CreateChoferServer({ data });
+    return CreateChoferServer(withAuth({ data }));
   },
   async updateChofer(data: { id: number } & any): Promise<any> {
-    return UpdateChoferServer({ data });
+    return UpdateChoferServer(withAuth({ data }));
   },
   async deleteChofer(id: number) {
-    return DeleteChoferServer({ data: { id } });
+    return DeleteChoferServer(withAuth({ data: { id } }));
   },
 
   // ENTRADAS / SALIDAS
@@ -421,7 +473,7 @@ export const api = {
     puestos_ocupados?: number | null;
     serial_listin?: string | null;
   }) {
-    return CreateEntradaServer({ data });
+    return CreateEntradaServer(withAuth({ data }));
   },
 
   async createSalida(data: {
@@ -435,7 +487,7 @@ export const api = {
     serial_listin?: string | null;
     tipo_servicio_salida?: string | null;
   }) {
-    return CreateSalidaServer({ data });
+    return CreateSalidaServer(withAuth({ data }));
   },
 
   async selectEntradasSalidas(params: { from?: string; to?: string } = {}): Promise<any[]> {
@@ -443,7 +495,7 @@ export const api = {
   },
 
   async vincularSalidaSuelta(data: { salidaId: number; horaEntrada: string }) {
-    return VincularSalidaSueltaServer({ data });
+    return VincularSalidaSueltaServer(withAuth({ data }));
   },
 
   async updateEntrada(data: {
@@ -457,7 +509,7 @@ export const api = {
     tipo_servicio?: string | null;
     serial_listin?: string | null;
   }) {
-    return UpdateEntradaServer({ data });
+    return UpdateEntradaServer(withAuth({ data }));
   },
 
   async updateSalida(data: {
@@ -472,9 +524,8 @@ export const api = {
     serial_listin?: string | null;
     tipo_servicio_salida?: string | null;
   }) {
-    return UpdateSalidaServer({ data });
+    return UpdateSalidaServer(withAuth({ data }));
   },
-
 };
 
 export const MODALIDADES: { value: Modalidad; label: string }[] = [

@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 export const UpdateVehicleServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((data: {
     placa: string;
     marca: string;

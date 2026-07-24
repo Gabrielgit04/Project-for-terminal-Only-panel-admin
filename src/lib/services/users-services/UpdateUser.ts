@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 // ACTUALIZAR USUARIO (Perfil, Email Virtual y Contraseña Opcional)
 export const UpdateUserServer = createServerFn({ method: "POST" })
+    .middleware([requireAuth])
     .inputValidator((data: {
         userId: string;
         usuario: string;

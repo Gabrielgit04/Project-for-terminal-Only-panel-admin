@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 export const UpdateChoferServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((data: {
     id: number;
     nombres?: string;

@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 import { createUserSchema, formatZodErrorsFlat } from "@/lib/schemas";
 export const CreateUserServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((data: unknown) => {
     const result = createUserSchema.safeParse(data);
     if (!result.success) {

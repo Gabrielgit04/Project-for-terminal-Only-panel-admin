@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/use-auth";
+import { withAuth } from "@/lib/api";
 import { SelectUserServer } from "@/lib/services/users-services/SelectUser";
 import { CreateUserServer } from "@/lib/services/users-services/CreateUser";
 import { UpdateUserServer } from "@/lib/services/users-services/UpdateUser";
@@ -124,7 +125,7 @@ function UsuariosPage() {
 
         try {
             if (form.id) {
-                await UpdateUserServer({
+                await UpdateUserServer(withAuth({
                     data: {
                         userId: form.id,
                         nombre: form.nombre.trim(),
@@ -132,17 +133,17 @@ function UsuariosPage() {
                         contrasena: form.contrasena,
                         rol: form.rol.trim(),
                     },
-                });
+                }));
                 toast.success("Usuario actualizado");
             } else {
-                await CreateUserServer({
+                await CreateUserServer(withAuth({
                     data: {
                         nombre: form.nombre.trim(),
                         usuario: form.usuario.trim(),
                         contrasena: form.contrasena,
                         rol: form.rol.trim(),
                     },
-                });
+                }));
                 toast.success("Usuario agregado");
             }
         } catch (err: any) {
@@ -159,7 +160,7 @@ function UsuariosPage() {
     async function remove(id: string) {
         if (!confirm("¿Desea eliminar este usuario?")) return;
         try {
-            await DeleteUserServer({ data: { id } });
+            await DeleteUserServer(withAuth({ data: { id } }));
             toast.success("Usuario eliminado");
             load();
         } catch (err: any) {

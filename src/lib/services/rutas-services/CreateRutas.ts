@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 export const CreateRutasServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((data: {
     origen?: string | null;
     destino?: string | null;

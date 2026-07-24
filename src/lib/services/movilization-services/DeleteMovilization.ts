@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 function nowVE(): string {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("es-VE", {
@@ -11,6 +12,7 @@ function nowVE(): string {
 }
 
 export const DeleteMovilizationServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((data: { id: number; tipo?: string }) => data)
   .handler(async ({ data }) => {
     try {

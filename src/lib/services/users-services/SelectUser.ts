@@ -19,7 +19,7 @@ export const SelectUserServer = createServerFn({ method: "GET" })
                 id: u.id,
                 nombre: u.nombre ?? "",
                 usuario: u.usuario ?? "",
-                rol: u.rol ?? "user",
+                rol: u.rol ?? "",
             }));
 
         } catch (err: any) {

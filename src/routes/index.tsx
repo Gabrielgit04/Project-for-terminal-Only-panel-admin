@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Terminal Alí Primera — Gestión de Recaudación" },
-      { name: "description", content: "Sistema oficial de venta de listines, control de modalidades y reportes de auditoría del Terminal Alí Primera." },
+      { name: "description", content: "Sistema oficial de gestión operacional con reportes de auditoría del Terminal Alí Primera." },
     ],
   }),
   component: Landing,
@@ -52,13 +52,13 @@ function Landing() {
               <ShieldCheck className="h-3.5 w-3.5" /> Plataforma institucional
             </span>
             <h1 className="font-display text-4xl font-extrabold leading-tight text-foreground md:text-5xl">
-              Recaudación moderna,{ }
+              Gestión moderna,{ }
               <span className="bg-[var(--gradient-accent)] bg-clip-text text-transparent">
                 auditoría transparente
               </span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-              Administra la venta de listines, controla las modalidades de transporte y genera
+              Administra los vehiculos, choferes y rutas que circulan en el terminal, controla las movilizaciones de transporte y genera
               reportes en PDF con filtros inteligentes — todo desde un panel diseñado para tu equipo.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -75,7 +75,7 @@ function Landing() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <FeatureCard icon={Ticket} title="Venta de listines" desc="4 métodos de pago, modalidades y registro vehicular." />
                 <FeatureCard icon={BarChart3} title="Reportes PDF" desc="Diarios, semanales y mensuales con gráficos." />
-                <FeatureCard icon={ShieldCheck} title="4 roles" desc="Administrador y recaudadores 1, 2 y 3." />
+                <FeatureCard icon={ShieldCheck} title="5 roles" desc="Administrador, coordinador, gerente, asistente y garita." />
                 <FeatureCard icon={Bus} title="5 modalidades" desc="Masivo, puesto, urbana, suburbana, interurbana." />
               </div>
             </div>

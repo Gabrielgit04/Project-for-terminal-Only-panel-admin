@@ -19,14 +19,14 @@ import { Button } from "@/components/ui/button";
 import { useTour } from "@/lib/tour";
 import logoSrc from "@/public/assets/Imagen1.png";
 const navItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: ["admin", "gerente"], tour: undefined },
-  { title: "Registro de Vehículos", url: "/admin/vehicle", icon: Bus, roles: ["admin", "gerente"], tour: "vehicle" },
-  { title: "Choferes", url: "/admin/chofer", icon: Users, roles: ["admin", "gerente"], tour: "chofer" },
-  { title: "Rutas", url: "/admin/rutas", icon: Route, roles: ["admin", "gerente"], tour: "rutas" },
-  { title: "Entradas / Salidas", url: "/admin/entradas-salidas", icon: DoorOpen, roles: ["admin", "gerente", "garita"], tour: "entradas-salidas" },
-  { title: "Movilizacion", url: "/admin/movilizacion", icon: Car, roles: ["admin", "gerente"], tour: "movilizacion" },
-  { title: "Cierre Diario", url: "/admin/cierre-diario", icon: FileSpreadsheet, roles: ["admin", "gerente"], tour: undefined },
-  { title: "Usuarios", url: "/admin/users", icon: Users, roles: ["admin"], tour: undefined },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: ["presidente", "coordinador", "gerente", "asistente"], tour: undefined },
+  { title: "Registro de Vehículos", url: "/admin/vehicle", icon: Bus, roles: ["presidente", "coordinador", "gerente", "asistente"], tour: "vehicle" },
+  { title: "Choferes", url: "/admin/chofer", icon: Users, roles: ["presidente", "coordinador", "gerente", "asistente"], tour: "chofer" },
+  { title: "Rutas", url: "/admin/rutas", icon: Route, roles: ["presidente", "coordinador", "gerente", "asistente"], tour: "rutas" },
+  { title: "Entradas / Salidas", url: "/admin/entradas-salidas", icon: DoorOpen, roles: ["presidente", "coordinador", "gerente", "asistente", "garita"], tour: "entradas-salidas" },
+  { title: "Movilizacion", url: "/admin/movilizacion", icon: Car, roles: ["presidente", "coordinador", "gerente", "asistente"], tour: "movilizacion" },
+  { title: "Cierre Diario", url: "/admin/cierre-diario", icon: FileSpreadsheet, roles: ["presidente", "coordinador", "gerente", "asistente"], tour: undefined },
+  { title: "Usuarios", url: "/admin/users", icon: Users, roles: ["presidente", "coordinador", "gerente"], tour: undefined },
 ];
 
 export function AppSidebar() {

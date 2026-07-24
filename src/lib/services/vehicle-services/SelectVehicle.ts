@@ -25,7 +25,7 @@ export const SelectVehicleServer = createServerFn({ method: "GET" })
           orgMap.set((o as any).id_rif, (o as any).nombre ?? "");
         }
       }
-      type TipologyValue = 32 | 5 | 60 | 20;
+      type TipologyValue = 32 | 5 | 60 | 20 | 23 | 24 | 15 | 4 | 28;
       const PUESTOS_POR_TIPO: Record<string, TipologyValue> = {
         encava: 32,
         "por puesto": 5,

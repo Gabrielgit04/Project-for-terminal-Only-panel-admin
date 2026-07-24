@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 
 export const VincularSalidaSueltaServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((data: { salidaId: number; horaEntrada: string }) => data)
   .handler(async ({ data }) => {
     try {

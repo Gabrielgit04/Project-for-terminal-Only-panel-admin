@@ -2,31 +2,31 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
 
 export interface MovilizacionRow {
-  id: number
-  dia: string
-  fecha: string
-  id_ruta: number
-  placa_vehiculo: string
-  unidades_despachadas: number | null
-  entrada_id: number | null
-  tipo_servicio: string | null
-  total_pasajeros: number | null
-  total_tasas: number | null
-  estado: string | null
-  puestos_ocupados: number | null
-  hora_entrada: string | null
-  tipo?: string
-  serial_listin?: string | null
+  id: number;
+  dia: string;
+  fecha: string;
+  id_ruta: number;
+  placa_vehiculo: string;
+  unidades_despachadas: number | null;
+  entrada_id: number | null;
+  tipo_servicio: string | null;
+  total_pasajeros: number | null;
+  total_tasas: number | null;
+  estado: string | null;
+  puestos_ocupados: number | null;
+  hora_entrada: string | null;
+  tipo?: string;
+  serial_listin?: string | null;
 }
 
 export interface SelectMovilizacionParams {
-  month?: number
-  year?: number
-  filterDate?: string
-  fromDate?: string
-  toDate?: string
-  page?: number
-  pageSize?: number
+  month?: number;
+  year?: number;
+  filterDate?: string;
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 function toVE(iso: string | null | undefined): string | null {
@@ -34,8 +34,13 @@ function toVE(iso: string | null | undefined): string | null {
   const d = new Date(iso);
   const parts = new Intl.DateTimeFormat("es-VE", {
     timeZone: "America/Caracas",
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
   }).formatToParts(d);
   const p = (t: string) => parts.find((x) => x.type === t)?.value ?? "";
   return `${p("year")}-${p("month")}-${p("day")} ${p("hour")}:${p("minute")}:${p("second")}`;
@@ -46,14 +51,25 @@ function dateParts(iso: string | undefined | null): { dia: string; fecha: string
   const d = new Date(iso);
   const parts = new Intl.DateTimeFormat("es-VE", {
     timeZone: "America/Caracas",
-    weekday: "long", year: "numeric", month: "2-digit", day: "2-digit",
+    weekday: "long",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).formatToParts(d);
   const p = (t: string) => parts.find((x) => x.type === t)?.value ?? "";
   const diaMap: Record<string, string> = {
-    domingo: "DOMINGO", lunes: "LUNES", martes: "MARTES", miércoles: "MIERCOLES",
-    jueves: "JUEVES", viernes: "VIERNES", sábado: "SABADO",
+    domingo: "DOMINGO",
+    lunes: "LUNES",
+    martes: "MARTES",
+    miércoles: "MIERCOLES",
+    jueves: "JUEVES",
+    viernes: "VIERNES",
+    sábado: "SABADO",
   };
-  const wd = p("weekday").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const wd = p("weekday")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
   return {
     dia: diaMap[wd] ?? "DOMINGO",
     fecha: `${p("year")}-${p("month")}-${p("day")}`,
@@ -85,20 +101,33 @@ export const selectMovilizationServer = createServerFn({ method: "GET" })
       const fromTS = `${fromStr.replace(" ", "T")}-04:00`;
       const toTS = `${toStr.replace(" ", "T")}-04:00`;
 
+      // Soft-cap para evitar descargar TODO el histórico si el período es enorme.
+      // La paginación real en DB requeriría una SQL view (no disponible vía código).
+      // Este cap limita el consumo de CPU/memoria del Worker bajo carga.
+      const SOFT_CAP = Math.min(Math.max(pageSize * page * 10, 500), 10000);
+
       const [entradasRes, salidasSueltasRes] = await Promise.all([
         (supabase as any)
-          .from('entrada')
-          .select("id, hora, id_tipologia, id_organizacion, id_ruta, placa_vehiculo, puestos_ocupados, id_chofer, estado, tipo_servicio, serial_listin")
+          .from("entrada")
+          .select(
+            "id, hora, id_tipologia, id_organizacion, id_ruta, placa_vehiculo, puestos_ocupados, id_chofer, estado, tipo_servicio, serial_listin",
+          )
           .is("deleted_at", null)
           .gte("hora", fromTS)
-          .lte("hora", toTS),
+          .lte("hora", toTS)
+          .order("hora", { ascending: false })
+          .limit(SOFT_CAP),
         (supabase as any)
           .from("salida")
-          .select("id, hora, id_tipologia, id_organizacion, id_ruta, placa_vehiculo, puestos_ocupados, total_tasas, tipo_servicio_salida, serial_listin")
+          .select(
+            "id, hora, id_tipologia, id_organizacion, id_ruta, placa_vehiculo, puestos_ocupados, total_tasas, tipo_servicio_salida, serial_listin",
+          )
           .is("deleted_at", null)
           .is("entrada_id", null)
           .gte("hora", fromTS)
-          .lte("hora", toTS),
+          .lte("hora", toTS)
+          .order("hora", { ascending: false })
+          .limit(SOFT_CAP),
       ]);
 
       if (entradasRes.error) throw entradasRes.error;
@@ -107,12 +136,16 @@ export const selectMovilizationServer = createServerFn({ method: "GET" })
       const entradas = entradasRes.data ?? [];
       const salidasSueltas = salidasSueltasRes.data ?? [];
 
-      const rutaIds = [...new Set([...entradas, ...salidasSueltas].map((r: any) => r.id_ruta).filter(Boolean))];
+      const rutaIds = [
+        ...new Set([...entradas, ...salidasSueltas].map((r: any) => r.id_ruta).filter(Boolean)),
+      ];
       const { data: rutas } = await (supabase as any)
         .from("rutas")
         .select("id, origen, destino")
         .in("id", rutaIds);
-      const rutaMap = new Map<number, { id: number; origen: string; destino: string }>((rutas ?? []).map((rt: any) => [rt.id, rt]));
+      const rutaMap = new Map<number, { id: number; origen: string; destino: string }>(
+        (rutas ?? []).map((rt: any) => [rt.id, rt]),
+      );
 
       const entradaIds = entradas.map((r: any) => r.id).filter(Boolean);
       let salidaMap = new Map<number, { hora: string; total_tasas: number | null }>();
@@ -123,11 +156,14 @@ export const selectMovilizationServer = createServerFn({ method: "GET" })
           .in("entrada_id", entradaIds)
           .is("deleted_at", null);
         for (const s of salidas ?? []) {
-          if (s.entrada_id) salidaMap.set(s.entrada_id, { hora: s.hora, total_tasas: s.total_tasas });
+          if (s.entrada_id)
+            salidaMap.set(s.entrada_id, { hora: s.hora, total_tasas: s.total_tasas });
         }
       }
       const sinSalida = entradas.filter((r: any) => !salidaMap.has(r.id) && r.placa_vehiculo);
-      const placasFaltantes = [...new Set(sinSalida.map((r: any) => r.placa_vehiculo).filter(Boolean))];
+      const placasFaltantes = [
+        ...new Set(sinSalida.map((r: any) => r.placa_vehiculo).filter(Boolean)),
+      ];
       if (placasFaltantes.length > 0) {
         const { data: salidas } = await (supabase as any)
           .from("salida")
@@ -144,7 +180,11 @@ export const selectMovilizationServer = createServerFn({ method: "GET" })
         }
       }
 
-      const tipoIds = [...new Set([...entradas, ...salidasSueltas].map((r: any) => r.id_tipologia).filter(Boolean))];
+      const tipoIds = [
+        ...new Set(
+          [...entradas, ...salidasSueltas].map((r: any) => r.id_tipologia).filter(Boolean),
+        ),
+      ];
       let tipoMap = new Map<number, number>();
       if (tipoIds.length > 0) {
         const { data: tipos } = await (supabase as any)
@@ -162,30 +202,94 @@ export const selectMovilizationServer = createServerFn({ method: "GET" })
         if (!tipoServicio) {
           const destino = (ruta?.destino ?? "").toLowerCase();
           const suburbanoDestinos = [
-            "judibana", "santa elena", "cardón", "cardon", "las piedras",
-            "los taques", "amuay", "adícora", "adicora", "jadacaquiva",
-            "moruy", "tacuato", "pueblo nuevo", "la vela",
+            "judibana",
+            "santa elena",
+            "cardón",
+            "cardon",
+            "las piedras",
+            "los taques",
+            "amuay",
+            "adícora",
+            "adicora",
+            "jadacaquiva",
+            "moruy",
+            "tacuato",
+            "pueblo nuevo",
+            "la vela",
           ];
           const interurbanoDestinos = [
-            "inter", "ccs", "caracas", "maracay", "valencia",
-            "amazonas", "anzoátegui", "anzeátegui", "apure", "aragua",
-            "barinas", "bolívar", "bolivar", "carabobo", "cojedes",
-            "delta amacuro", "falcon", "falcón", "guárico", "guarico",
-            "lara", "mérida", "merida", "miranda", "monagas",
-            "nueva esparta", "portuguesa", "sucre", "táchira", "tachira",
-            "trujillo", "vargas", "la guaira", "yaracuy", "zulia",
-            "barquisimeto", "ciudad guayana", "puerto ordaz", "barcelona",
-            "puerto la cruz", "maturín", "maturin", "cumaná", "cumana",
-            "san cristóbal", "coro", "los teques", "guanare",
-            "san fernando", "calabozo", "el tigre", "ciudad bolívar",
-            "tucupita", "porlamar", "punto fijo", "puerto cabello",
-            "valera", "el vigía", "maracaibo", "cabimas", "ciudad ojeda",
-            "carúpano", "carupano", "puerto ayacucho", "guasdualito",
+            "inter",
+            "ccs",
+            "caracas",
+            "maracay",
+            "valencia",
+            "amazonas",
+            "anzoátegui",
+            "anzeátegui",
+            "apure",
+            "aragua",
+            "barinas",
+            "bolívar",
+            "bolivar",
+            "carabobo",
+            "cojedes",
+            "delta amacuro",
+            "falcon",
+            "falcón",
+            "guárico",
+            "guarico",
+            "lara",
+            "mérida",
+            "merida",
+            "miranda",
+            "monagas",
+            "nueva esparta",
+            "portuguesa",
+            "sucre",
+            "táchira",
+            "tachira",
+            "trujillo",
+            "vargas",
+            "la guaira",
+            "yaracuy",
+            "zulia",
+            "barquisimeto",
+            "ciudad guayana",
+            "puerto ordaz",
+            "barcelona",
+            "puerto la cruz",
+            "maturín",
+            "maturin",
+            "cumaná",
+            "cumana",
+            "san cristóbal",
+            "coro",
+            "los teques",
+            "guanare",
+            "san fernando",
+            "calabozo",
+            "el tigre",
+            "ciudad bolívar",
+            "tucupita",
+            "porlamar",
+            "punto fijo",
+            "puerto cabello",
+            "valera",
+            "el vigía",
+            "maracaibo",
+            "cabimas",
+            "ciudad ojeda",
+            "carúpano",
+            "carupano",
+            "puerto ayacucho",
+            "guasdualito",
           ];
           if (suburbanoDestinos.some((kw) => destino.includes(kw))) {
             tipoServicio = "suburbano";
           } else {
-            tipoServicio = interurbanoDestinos.some((kw) => destino.includes(kw)) ? "interurbano" : "suburbano";
+            tipoServicio = interurbanoDestinos.some((kw) => destino.includes(kw))
+              ? "interurbano"
+              : "suburbano";
           }
         }
         return {

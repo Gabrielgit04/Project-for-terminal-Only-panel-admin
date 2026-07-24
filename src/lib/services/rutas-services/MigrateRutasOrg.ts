@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 export const MigrateRutasOrgServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .handler(async () => {
     const { data: orgs } = await supabase
       .from("organizaciones")

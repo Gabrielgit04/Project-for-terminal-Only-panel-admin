@@ -1,27 +1,37 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 function nowVE(): string {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("es-VE", {
-    timeZone: "America/Caracas", year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
   }).formatToParts(now);
   const p = (t: string) => parts.find((x) => x.type === t)?.value ?? "";
   return `${p("year")}-${p("month")}-${p("day")}T${p("hour")}:${p("minute")}:${p("second")}-04:00`;
 }
 
 export const CreateSalidaServer = createServerFn({ method: "POST" })
-  .inputValidator((data: {
-    id_tipologia: number;
-    id_organizacion: string;
-    id_ruta?: number | null;
-    id_chofer: number;
-    placa_vehiculo?: string | null;
-    puestos_ocupados?: number | null;
-    total_tasas: number;
-    serial_listin?: string | null;
-    tipo_servicio_salida?: string | null;
-  }) => data)
+  .middleware([requireAuth])
+  .inputValidator(
+    (data: {
+      id_tipologia: number;
+      id_organizacion: string;
+      id_ruta?: number | null;
+      id_chofer: number;
+      placa_vehiculo?: string | null;
+      puestos_ocupados?: number | null;
+      total_tasas: number;
+      serial_listin?: string | null;
+      tipo_servicio_salida?: string | null;
+    }) => data,
+  )
   .handler(async ({ data }) => {
     try {
       const { data: tipo } = await (supabase as any)
@@ -64,6 +74,10 @@ export const CreateSalidaServer = createServerFn({ method: "POST" })
       let vinculada = false;
 
       if (data.placa_vehiculo) {
+        // Race-safe: el UPDATE condicional sobre estado="en_espera" garantiza
+        // que dos salidas simultáneas de la misma placa no se vinculen a la
+        // misma entrada. Si el count==0, otro request se adelantó: la salida
+        // queda standalone y el sistema permanece consistente.
         const { data: entrada } = await (supabase as any)
           .from("entrada")
           .select("id")
@@ -75,16 +89,20 @@ export const CreateSalidaServer = createServerFn({ method: "POST" })
           .maybeSingle();
 
         if (entrada) {
-          await (supabase as any)
-            .from("salida")
-            .update({ entrada_id: entrada.id })
-            .eq("id", salidaId);
-
-          await (supabase as any)
+          const { count: vinculadas } = await (supabase as any)
             .from("entrada")
             .update({ estado: "despachado" })
-            .eq("id", entrada.id);
-          vinculada = true;
+            .eq("id", entrada.id)
+            .eq("estado", "en_espera")
+            .select("*", { count: "exact" });
+
+          if (vinculadas && vinculadas > 0) {
+            await (supabase as any)
+              .from("salida")
+              .update({ entrada_id: entrada.id })
+              .eq("id", salidaId);
+            vinculada = true;
+          }
         }
       }
 

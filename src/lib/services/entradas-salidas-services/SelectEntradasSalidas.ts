@@ -28,15 +28,20 @@ function toVE(iso: string | null | undefined): string | null {
   const d = new Date(iso);
   const parts = new Intl.DateTimeFormat("es-VE", {
     timeZone: "America/Caracas",
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
   }).formatToParts(d);
   const p = (t: string) => parts.find((x) => x.type === t)?.value ?? "";
   return `${p("year")}-${p("month")}-${p("day")} ${p("hour")}:${p("minute")}:${p("second")}`;
 }
 
 export const SelectEntradasSalidasServer = createServerFn({ method: "GET" })
-  .inputValidator((data: { from?: string; to?: string }) => data)
+  .inputValidator((data: { from?: string; to?: string; page?: number; pageSize?: number }) => data)
   .handler(async ({ data }) => {
     try {
       function ensureOffset(dateStr: string): string {
@@ -48,14 +53,25 @@ export const SelectEntradasSalidasServer = createServerFn({ method: "GET" })
       const fromTS = data.from ? ensureOffset(data.from) : null;
       const toTS = data.to ? ensureOffset(data.to) : null;
 
+      // Hard-cap para impedir payloads JSON gigantes con histórico creciente.
+      const MAX_ROWS = 2000;
+      const page = Math.max(1, data.page ?? 1);
+      const pageSize = Math.min(Math.max(data.pageSize ?? 50, 1), 200);
+      const rangeFrom = (page - 1) * pageSize;
+      const rangeTo = rangeFrom + pageSize - 1;
+
       const entradasQuery = (supabase as any)
         .from("entrada")
-        .select(`id, hora, id_tipologia, id_organizacion, id_ruta, id_chofer, placa_vehiculo, puestos_ocupados, tipo_servicio, serial_listin`)
+        .select(
+          `id, hora, id_tipologia, id_organizacion, id_ruta, id_chofer, placa_vehiculo, puestos_ocupados, tipo_servicio, serial_listin`,
+        )
         .is("deleted_at", null);
 
       const salidasQuery = (supabase as any)
         .from("salida")
-        .select(`id, hora, id_tipologia, id_organizacion, id_ruta, id_chofer, placa_vehiculo, puestos_ocupados, total_tasas, serial_listin, tipo_servicio_salida`)
+        .select(
+          `id, hora, id_tipologia, id_organizacion, id_ruta, id_chofer, placa_vehiculo, puestos_ocupados, total_tasas, serial_listin, tipo_servicio_salida`,
+        )
         .is("deleted_at", null);
 
       if (fromTS) {
@@ -68,8 +84,12 @@ export const SelectEntradasSalidasServer = createServerFn({ method: "GET" })
       }
 
       const [entradasRes, salidasRes] = await Promise.all([
-        entradasQuery.order("hora", { ascending: false }),
-        salidasQuery.order("hora", { ascending: false }),
+        entradasQuery
+          .order("hora", { ascending: false })
+          .range(rangeFrom, Math.min(rangeTo, MAX_ROWS - 1)),
+        salidasQuery
+          .order("hora", { ascending: false })
+          .range(rangeFrom, Math.min(rangeTo, MAX_ROWS - 1)),
       ]);
 
       if (entradasRes.error) throw entradasRes.error;
@@ -82,8 +102,8 @@ export const SelectEntradasSalidasServer = createServerFn({ method: "GET" })
       const choferMap = new Map((choferRows ?? []).map((c: any) => [c.id, c.nombres_apellidos]));
 
       const allRaw: any[] = [
-        ...((entradasRes.data ?? []).map((r: any) => ({ ...r, tipo: "entrada" as const }))),
-        ...((salidasRes.data ?? []).map((r: any) => ({ ...r, tipo: "salida" as const }))),
+        ...(entradasRes.data ?? []).map((r: any) => ({ ...r, tipo: "entrada" as const })),
+        ...(salidasRes.data ?? []).map((r: any) => ({ ...r, tipo: "salida" as const })),
       ];
 
       const rutaIds = [...new Set(allRaw.map((r: any) => r.id_ruta).filter(Boolean))];

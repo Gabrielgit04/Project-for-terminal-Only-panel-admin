@@ -1,8 +1,17 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState, useNavigate } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+  useRouterState,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import appCss from "../styles.css?url";
 import logoSrc from "@/public/assets/Imagen1.png";
 import { AuthProvider } from "@/lib/auth-provider";
+import { QueryProvider } from "@/lib/query-provider";
 import { useAuth } from "@/lib/use-auth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -38,14 +47,21 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Terminal Alí Primera — Sistema de Gestión" },
-      { name: "description", content: "Plataforma de venta de listines y auditoría de recaudación del Terminal Alí Primera." },
+      {
+        name: "description",
+        content:
+          "Plataforma de venta de listines y auditoría de recaudación del Terminal Alí Primera.",
+      },
     ],
     links: [
       { rel: "icon", type: "image/png", href: logoSrc },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" },
-      { rel: "stylesheet", href: appCss }
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap",
+      },
+      { rel: "stylesheet", href: appCss },
     ],
   }),
   shellComponent: RootShell,
@@ -69,10 +85,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <AuthProvider>
-      <AppShell />
-      <Toaster richColors position="top-right" />
-    </AuthProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <AppShell />
+        <Toaster richColors position="top-right" />
+      </AuthProvider>
+    </QueryProvider>
   );
 }
 
@@ -83,7 +101,7 @@ function AppShell() {
   const isAdminArea = pathname.startsWith("/admin");
   const isLogin = pathname === "/login";
   const [dark, setDark] = useState(() =>
-    typeof window !== "undefined" ? localStorage.getItem("theme") === "dark" : false
+    typeof window !== "undefined" ? localStorage.getItem("theme") === "dark" : false,
   );
   const { start, restart } = useTour();
 
@@ -124,7 +142,10 @@ function AppShell() {
             <SidebarTrigger />
             <div className="flex-1" />
             {user.role !== "garita" && (
-              <button onClick={restart} className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent mr-2">
+              <button
+                onClick={restart}
+                className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent mr-2"
+              >
                 <HelpCircle className="h-4 w-4" />
                 Guía
               </button>

@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
+import { requireAuth } from "@/lib/middleware/require-auth";
 export const UpdateVehicleServer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((data: {
     placa: string;
     marca: string;
@@ -8,7 +10,7 @@ export const UpdateVehicleServer = createServerFn({ method: "POST" })
     cedula_propietario: string;
     propietario: string;
     tipo: "encava" | "por puesto" | "colectivo";
-    cantidad_puestos: 32 | 5 | 60 | 20;
+    cantidad_puestos: 32 | 5 | 60 | 20 | 23 | 24 | 15 | 4 | 28;
     id_organizacion?: string | null;
     organizacion_nombre?: string | null;
     organizacion_rif?: string | null;

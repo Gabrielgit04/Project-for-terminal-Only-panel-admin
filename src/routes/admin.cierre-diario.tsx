@@ -14,6 +14,8 @@ import { ChevronDown, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logoSrc from "@/public/assets/Imagen1.png";
+import logoCarirubana from "@/public/assets/carirubana.png";
 
 export const Route = createFileRoute("/admin/cierre-diario")({ component: CierreDiarioPage });
 
@@ -90,25 +92,46 @@ function CierreDiarioPage() {
     <div className="space-y-4">
       <FlowBar next={{ label: "Cierre Diario", to: "/admin/cierre-diario" }} />
 
+      {/* Membrete institucional */}
+      <div className="flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-[var(--gradient-primary)] p-1.5 shadow-[var(--shadow-soft)]">
+          <img src={logoSrc} alt="Logo" className="h-full w-full rounded-md object-contain" />
+        </div>
+        <div>
+          <h1 className="font-display text-xl font-bold leading-tight">Terminal Alí Primera</h1>
+          <p className="text-sm text-muted-foreground">Cierre de Operaciones Diario</p>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold">Cierre de Operaciones Diario</h1>
-          <p className="text-sm text-muted-foreground">Resumen agrupado por destino, tipología y línea</p>
+          <h2 className="font-display text-lg font-semibold">Resumen por destino, tipología y línea</h2>
         </div>
         <div className="flex items-center gap-2">
           <Input type="date" className="w-44 h-9 text-sm" value={fecha} onChange={(e) => setFecha(e.target.value)} />
           <Button variant="outline" size="sm" disabled={!data?.filas.length} onClick={() => {
             const doc = new jsPDF();
-            const title = `Cierre de Operaciones - ${fecha}`;
-            doc.setFontSize(14);
-            doc.text(title, 14, 20);
+            doc.addImage(logoSrc, "PNG", 14, 8, 22, 22);
+            doc.addImage(logoCarirubana, "PNG", 180, 8, 22, 22);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Carirubana Eps, Terminal de Pasajeros, "Ali Primera" S.A.`, 108, 11, { align: "center" });
+            doc.setFont("helvetica", "normal");
+            doc.text("RIF. G-20008908-3", 108, 16, { align: "center" });
+            doc.text("Av. Intercomunal Ali Primera, Edf. Sede Terminal", 108, 21, { align: "center" });
+            doc.text("de pasajeros, Punto Fijo - Edo. Falcon", 108, 26, { align: "center" });
+            doc.text("Telefonos: (0269) 277.6671 Cel: 0416-167.11.98", 108, 31, { align: "center" });
+            doc.text("Email: epsterminaldepasajeros@gmail.com   terminaldepasajeros_pf", 108, 36, { align: "center" });
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Cierre de Operaciones Diario — ${fecha}`, 108, 44, { align: "center" });
             const body = (data?.filas ?? []).map((f) => [f.destino, String(f.cantidad_puestos), f.organizacion, String(f.unidades), String(f.pasajeros), fmt(f.total_tasas)]);
             body.push(["", "", "", "", "", ""]);
             body.push(["GRAN TOTAL", "", "", String(data?.granTotal.unidades ?? 0), String(data?.granTotal.pasajeros ?? 0), fmt(data?.granTotal.total_tasas ?? 0)]);
             autoTable(doc, {
               head: [["Destino", "Puestos", "Línea", "Unidades", "Pasajeros", "Tasas"]],
               body,
-              startY: 28,
+              startY: 48,
               styles: { fontSize: 8 },
               headStyles: { fillColor: [59, 130, 246] },
               footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: "bold" },

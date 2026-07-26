@@ -61,6 +61,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FlowBar } from "@/components/flow-nav";
 import { formatHora } from "@/lib/utils";
+import logoSrc from "@/public/assets/Imagen1.png";
+import logoCarirubana from "@/public/assets/carirubana.png";
 
 const VE_TZ = "America/Caracas";
 
@@ -970,8 +972,20 @@ function MovilizacionPage() {
                     const doc = new jsPDF();
                     const fromStr = csRange.from.slice(0, 10);
                     const toStr = csRange.to.slice(0, 10);
-                    doc.setFontSize(14);
-                    doc.text(`Control Semanal — ${fromStr} al ${toStr}`, 14, 20);
+                    doc.addImage(logoSrc, "PNG", 14, 8, 22, 22);
+                    doc.addImage(logoCarirubana, "PNG", 180, 8, 22, 22);
+                    doc.setFontSize(8);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`Carirubana Eps, Terminal de Pasajeros, "Ali Primera" S.A.`, 108, 11, { align: "center" });
+                    doc.setFont("helvetica", "normal");
+                    doc.text("RIF. G-20008908-3", 108, 16, { align: "center" });
+                    doc.text("Av. Intercomunal Ali Primera, Edf. Sede Terminal", 108, 21, { align: "center" });
+                    doc.text("de pasajeros, Punto Fijo - Edo. Falcon", 108, 26, { align: "center" });
+                    doc.text("Telefonos: (0269) 277.6671 Cel: 0416-167.11.98", 108, 31, { align: "center" });
+                    doc.text("Email: epsterminaldepasajeros@gmail.com   terminaldepasajeros_pf", 108, 36, { align: "center" });
+                    doc.setFontSize(11);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`Control Semanal — ${fromStr} al ${toStr}`, 108, 44, { align: "center" });
                     const tbody = (csData?.tabla ?? []).map((f) => [
                       f.fecha,
                       f.dia,
@@ -992,7 +1006,7 @@ function MovilizacionPage() {
                     autoTable(doc, {
                       head: [["Fecha", "Día", "Unidades", "Usuarios", "Desembarques", "Tasas"]],
                       body: tbody,
-                      startY: 28,
+                      startY: 48,
                       styles: { fontSize: 8 },
                       headStyles: { fillColor: [59, 130, 246] },
                     });

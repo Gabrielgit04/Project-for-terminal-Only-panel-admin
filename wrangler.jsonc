@@ -23,7 +23,6 @@
     }
   ],
   "vars": {
-    "VITE_SUPABASE_URL": "https://yjfbyziwmwjrulcbuenn.supabase.co",
-    "VITE_BCV_API_KEY": "REDACTED"
+    "VITE_SUPABASE_URL": "https://yjfbyziwmwjrulcbuenn.supabase.co"
   }
 }

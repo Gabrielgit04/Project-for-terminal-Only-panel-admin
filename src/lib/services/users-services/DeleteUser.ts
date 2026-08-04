@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
-import { requireAuth } from "@/lib/middleware/require-auth";
+import { requireRole } from "@/lib/middleware/require-role";
 export const DeleteUserServer = createServerFn({ method: "POST" })
-    .middleware([requireAuth])
+    .middleware([requireRole("presidente", "coordinador", "gerente")])
     .inputValidator((data: { id: string }) => data)
     .handler(async ({ data }) => {
         try {

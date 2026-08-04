@@ -52,11 +52,6 @@ export const Route = createRootRoute({
         content:
           "Plataforma de venta de listines y auditoría de recaudación del Terminal Alí Primera.",
       },
-      {
-        httpEquiv: "Content-Security-Policy",
-        content:
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co",
-      },
     ],
     links: [
       { rel: "icon", type: "image/png", href: logoSrc },

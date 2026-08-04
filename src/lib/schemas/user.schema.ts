@@ -18,10 +18,10 @@ export const createUserSchema = z.object({
     .min(passwordMinLength, `La contraseña debe tener al menos ${passwordMinLength} caracteres`)
     .max(passwordMaxLength, `La contraseña no puede exceder ${passwordMaxLength} caracteres`),
   rol: z
-    .enum(["presidente", "coordinador", "gerente_operaciones", "asistente_operaciones", "garita"], {
+    .enum(["presidente", "coordinador", "gerente", "asistente", "garita"], {
       required_error: "El rol es obligatorio",
-      invalid_type_error: "El rol debe ser 'presidente', 'coordinador', 'gerente_operaciones', 'asistente_operaciones' o 'garita'",
-      message: "El rol debe ser 'presidente', 'coordinador', 'gerente_operaciones', 'asistente_operaciones' o 'garita'",
+      invalid_type_error: "El rol debe ser 'presidente', 'coordinador', 'gerente', 'asistente' o 'garita'",
+      message: "El rol debe ser 'presidente', 'coordinador', 'gerente', 'asistente' o 'garita'",
     }),
 });
 
@@ -42,10 +42,10 @@ export const updateUserSchema = z.object({
     .optional()
     .default(""),
   rol: z
-    .enum(["presidente", "coordinador", "gerente_operaciones", "asistente_operaciones", "garita"], {
+    .enum(["presidente", "coordinador", "gerente", "asistente", "garita"], {
       required_error: "El rol es obligatorio",
-      invalid_type_error: "El rol debe ser 'presidente', 'coordinador', 'gerente_operaciones', 'asistente_operaciones' o 'garita'",
-      message: "El rol debe ser 'presidente', 'coordinador', 'gerente_operaciones', 'asistente_operaciones' o 'garita'",
+      invalid_type_error: "El rol debe ser 'presidente', 'coordinador', 'gerente', 'asistente' o 'garita'",
+      message: "El rol debe ser 'presidente', 'coordinador', 'gerente', 'asistente' o 'garita'",
     }),
 });
 

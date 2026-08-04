@@ -11,5 +11,12 @@ export default defineConfig({
     server: {
       open: true,
     },
+    build: {
+      rollupOptions: {
+        // `cloudflare:workers` lo provee el runtime de Cloudflare Workers en
+        // producción; se deja como externo para que Rollup no intente resolverlo.
+        external: ["cloudflare:workers"],
+      },
+    },
   },
 });

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/server/db";
 import type { AuthUser } from "@/lib/api";
+import { withSpan } from "@/server/trace";
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_MINUTES = 3;
@@ -100,89 +101,95 @@ async function resetearIntentos(username: string): Promise<void> {
 export const loginServer = createServerFn({ method: "POST" })
   .inputValidator((data: { username: string; password: string }) => data)
   .handler(async ({ data }) => {
-    try {
-      const usernameLower = data.username.trim().toLowerCase();
+    return withSpan(
+      "loginServer",
+      async () => {
+        try {
+          const usernameLower = data.username.trim().toLowerCase();
 
-      // 1. Verificar si el usuario está bloqueado
-      await verificarBloqueo(usernameLower);
+          // 1. Verificar si el usuario está bloqueado
+          await verificarBloqueo(usernameLower);
 
-      // 2. Transformamos el username en el email virtual que guardamos en Auth
-      const virtualEmail = `${usernameLower}@systemterminal.com`;
+          // 2. Transformamos el username en el email virtual que guardamos en Auth
+          const virtualEmail = `${usernameLower}@systemterminal.com`;
 
-      // 3. Autenticamos directamente en el sistema de Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: virtualEmail,
-        password: data.password,
-      });
+          // 3. Autenticamos directamente en el sistema de Supabase Auth
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: virtualEmail,
+            password: data.password,
+          });
 
-      // Si las credenciales son incorrectas o no existe, manejamos el error
-      if (authError || !authData.user) {
-        const restantes = await registrarIntentoFallido(usernameLower);
-        if (restantes === null) {
-          throw new Error("Credenciales inválidas");
+          // Si las credenciales son incorrectas o no existe, manejamos el error
+          if (authError || !authData.user) {
+            const restantes = await registrarIntentoFallido(usernameLower);
+            if (restantes === null) {
+              throw new Error("Credenciales inválidas");
+            }
+            if (restantes === 0) {
+              throw new Error(
+                `Credenciales inválidas. Has agotado los ${MAX_ATTEMPTS} intentos. Espera ${LOCKOUT_MINUTES} minutos.`,
+              );
+            }
+            throw new Error(
+              `Credenciales inválidas. Te quedan ${restantes} intento${restantes === 1 ? "" : "s"}.`,
+            );
+          }
+
+          // 4. Credenciales correctas — reseteamos intentos
+          await resetearIntentos(usernameLower);
+
+          const user = authData.user;
+          const userRole = user.user_metadata?.role || user.app_metadata?.role || "";
+
+          // 5. Validación estricta de rol para el panel de administración
+          if (
+            userRole !== "presidente" &&
+            userRole !== "coordinador" &&
+            userRole !== "gerente" &&
+            userRole !== "asistente" &&
+            userRole !== "garita"
+          ) {
+            await supabase.auth.signOut();
+            throw new Error("No tienes permisos para acceder al sistema");
+          }
+
+          // Buscamos el nombre del usuario en la tabla local 'usuario'
+          const { data: dbUser } = await supabase
+            .from("usuario")
+            .select("nombre")
+            .ilike("usuario", usernameLower)
+            .maybeSingle();
+
+          // 6. Retornamos la sesión con el JWT seguro de Supabase y el ID tipo UUID
+          return {
+            token: authData.session?.access_token,
+            user: {
+              id: user.id,
+              username: user.user_metadata?.username || data.username,
+              name:
+                dbUser?.nombre ||
+                user.user_metadata?.nombre ||
+                user.user_metadata?.name ||
+                data.username,
+              role: userRole as any,
+            } as AuthUser,
+          };
+        } catch (err: any) {
+          console.error("[Auth error en login]", err.message);
+
+          if (
+            err.message === "No tienes permisos para acceder al sistema" ||
+            err.message.startsWith("Demasiados intentos") ||
+            err.message.startsWith("Credenciales inválidas")
+          ) {
+            throw err;
+          }
+
+          throw new Error("Error en el proceso de autenticación");
         }
-        if (restantes === 0) {
-          throw new Error(
-            `Credenciales inválidas. Has agotado los ${MAX_ATTEMPTS} intentos. Espera ${LOCKOUT_MINUTES} minutos.`,
-          );
-        }
-        throw new Error(
-          `Credenciales inválidas. Te quedan ${restantes} intento${restantes === 1 ? "" : "s"}.`,
-        );
-      }
-
-      // 4. Credenciales correctas — reseteamos intentos
-      await resetearIntentos(usernameLower);
-
-      const user = authData.user;
-      const userRole = user.user_metadata?.role || user.app_metadata?.role || "";
-
-      // 5. Validación estricta de rol para el panel de administración
-      if (
-        userRole !== "presidente" &&
-        userRole !== "coordinador" &&
-        userRole !== "gerente" &&
-        userRole !== "asistente" &&
-        userRole !== "garita"
-      ) {
-        await supabase.auth.signOut();
-        throw new Error("No tienes permisos para acceder al sistema");
-      }
-
-      // Buscamos el nombre del usuario en la tabla local 'usuario'
-      const { data: dbUser } = await supabase
-        .from("usuario")
-        .select("nombre")
-        .ilike("usuario", usernameLower)
-        .maybeSingle();
-
-      // 6. Retornamos la sesión con el JWT seguro de Supabase y el ID tipo UUID
-      return {
-        token: authData.session?.access_token,
-        user: {
-          id: user.id,
-          username: user.user_metadata?.username || data.username,
-          name:
-            dbUser?.nombre ||
-            user.user_metadata?.nombre ||
-            user.user_metadata?.name ||
-            data.username,
-          role: userRole as any,
-        } as AuthUser,
-      };
-    } catch (err: any) {
-      console.error("[Auth error en login]", err.message);
-
-      if (
-        err.message === "No tienes permisos para acceder al sistema" ||
-        err.message.startsWith("Demasiados intentos") ||
-        err.message.startsWith("Credenciales inválidas")
-      ) {
-        throw err;
-      }
-
-      throw new Error("Error en el proceso de autenticación");
-    }
+      },
+      { username: data.username.trim().toLowerCase() },
+    );
   });
 
 export const getPerfilActualServer = createServerFn({ method: "GET" }).handler(async () => {

@@ -24,6 +24,14 @@ Todo desde una interfaz web moderna, rapida y accesible desde cualquier computad
 
 Piensa en el sistema como un **libro de control digital** con varias secciones:
 
+### Inicio y acceso
+
+Pagina de inicio del sistema y pantalla de inicio de sesion:
+
+![Pagina de inicio](src/public/assets/index.png)
+
+![Inicio de sesion](src/public/assets/login.png)
+
 ### Garita (Entradas y Salidas)
 Es como un **cuaderno de bitacora**. Cada vez que un autobus llega al terminal, el operador de garita **registra una entrada**: anota la placa, el conductor, cuantos pasajeros trajo (desembarque), la ruta que hizo y si el servicio es suburbano (local) o interurbano (larga distancia). Cuando el autobus se va, **registra una salida**: anota los mismos datos mas las tasas cobradas.
 
@@ -68,6 +76,8 @@ Control de acceso de unidades al terminal. Permite:
 
 Panel de control y monitoreo. Dos vistas:
 
+![Movilizaciones](src/public/assets/movilizacion.png)
+
 **Control Operativo:**
 - Lista combinada de entradas y salidas, identificadas con badge **E** (azul) o **S** (naranja).
 - KPIs del dia: total movilizado, despachados, suspendidos, usuarios totales (entrada + salida), vehiculo mas usado.
@@ -85,9 +95,13 @@ Panel de control y monitoreo. Dos vistas:
 
 Catalogo de destinos. CRUD completo con busqueda de organizacion por RIF.
 
+![Rutas](src/public/assets/rutas.png)
+
 ### Conductores
 
 Registro de choferes con busqueda por nombre o cedula. CRUD completo.
+
+![Conductores](src/public/assets/choferes.png)
 
 ### Vehiculos
 
@@ -97,9 +111,13 @@ Inventario de autobuses con asignacion automatica de puestos segun el tipo. CRUD
 
 Gestion de acceso al sistema. CRUD completo con asignacion de rol.
 
+![Usuarios](src/public/assets/users.png)
+
 ### Dashboard
 
 Resumen operativo con tarjetas de movilizaciones activas, vehiculos operativos, choferes disponibles y rutas cubiertas. Graficos de rutas mas demandadas y horas pico. Ultimas movilizaciones registradas.
+
+![Dashboard](src/public/assets/dashboard.png)
 
 ---
 

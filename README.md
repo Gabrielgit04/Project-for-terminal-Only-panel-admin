@@ -24,6 +24,8 @@ Todo desde una interfaz web moderna, rapida y accesible desde cualquier computad
 
 Piensa en el sistema como un **libro de control digital** con varias secciones:
 
+> **Nota sobre las capturas:** la informacion mostrada en las imagenes es solo de prueba y no corresponde a personas reales.
+
 ### Inicio y acceso
 
 Pagina de inicio del sistema y pantalla de inicio de sesion:
@@ -110,8 +112,6 @@ Inventario de autobuses con asignacion automatica de puestos segun el tipo. CRUD
 ### Usuarios
 
 Gestion de acceso al sistema. CRUD completo con asignacion de rol.
-
-![Usuarios](src/public/assets/users.png)
 
 ### Dashboard
 
